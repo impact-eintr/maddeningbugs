@@ -75,3 +75,32 @@ func main() {
 }
 
 ```
+
+## Bug No.2
+
+这个 Bug 其实是我之前解决的,算是一种设计思路 场景是 使用 gin 进行路由处理的时候需要给处理方法传递一些数据
+
+``` go
+r := gin.Default()
+
+r.GET("/test", func(c *gin.Context){
+	// TODO
+})
+```
+
+
+但这样无法直接传递(不使用全局变量等方法的话)
+
+### 解决
+
+``` go
+r := gin.Default()
+
+r.GET("/test", func(val ...interface{}) gin.Handlefunc{
+	return func(c *gin.Context){
+		// TODO
+	}
+})
+```
+
+
