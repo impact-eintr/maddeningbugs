@@ -94,13 +94,17 @@ r.GET("/test", func(c *gin.Context){
 ### 解决
 
 ``` go
-r := gin.Default()
+r := gin.Default
 
-r.GET("/test", func(val ...interface{}) gin.Handlefunc{
-	return func(c *gin.Context){
-		// TODO
+s := "test"
+
+r.GET("/test", func(val string) gin.Handlefunc {
+	return func(c *gin.Context) {
+		fmt.Println(val)
 	}
-})
+}(s))
+
+
 ```
 
 

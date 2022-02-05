@@ -1,14 +1,20 @@
 package main
 
-import "github.com/gin-gonic/gin"
+import (
+	"fmt"
+
+	"github.com/gin-gonic/gin"
+)
 
 func main() {
 	r := gin.Default
 
-	r.GET("/test", func(val ...interface{}) gin.Handlefunc {
+	s := "test"
+
+	r.GET("/test", func(val string) gin.Handlefunc {
 		return func(c *gin.Context) {
-			// TODO
+			fmt.Println(val)
 		}
-	})
+	}(s))
 
 }
