@@ -244,4 +244,111 @@ r.GET("/test", func(val string) gin.Handlefunc {
 - 在for-select中，break只会影响到select，不会影响到for
 - 单独在select中是不能使用continue，会编译错误，只能用在for-select中。continue的语义就类似for中的语义，select后的代码不会被执行到。
 
+### Bug No.4
+- for select 中想要关闭管道来停止当前循环 应该再开一个goroutine？
 
+``` go
+package main
+
+import (
+	"log"
+	"sync"
+	"time"
+)
+
+type WaitGroupWrapper struct {
+	sync.WaitGroup
+}
+
+func (w *WaitGroupWrapper) Wrap(cb func()) {
+	w.Add(1)
+	go func() {
+		cb()
+		w.Done()
+	}()
+}
+
+type test struct {
+	exitChan chan struct{}
+	wg       WaitGroupWrapper
+}
+
+func (t *test) loop() {
+	defer log.Println("io goroutine exiting...")
+	for {
+		select {
+		case <-t.exitChan:
+			return
+		default:
+			log.Println("loop goroutine working")
+			time.Sleep(time.Second)
+		}
+	}
+}
+
+func (t *test) exit() {
+	close(t.exitChan)
+	t.wg.Wait()
+}
+
+func main() {
+	t := &test{exitChan: make(chan struct{})}
+
+	t.wg.Wrap(t.loop)
+
+	t.wg.Wrap(func() {
+		defer log.Println("ticker goroutine exiting...")
+		c := time.NewTimer(3 * time.Second)
+		for {
+			select {
+			case <-t.exitChan:
+				return
+			case <-c.C:
+				go t.exit()
+			}
+		}
+	})
+
+	for i := 2; i < 10; i++ {
+		t.wg.Wrap(func() {
+			defer log.Println("test goroutine exiting...")
+			for {
+				select {
+				case <-t.exitChan:
+					return
+				}
+			}
+		})
+	}
+
+	time.Sleep(5 * time.Second)
+
+	log.Println("main goroutine exit")
+
+}
+
+```
+
+### Bug No.5
+- http 客户端不应该使用默认配置
+- 客户端的 resp.Body 一定要关掉! 否则会引发 `accept4: too many open files; retrying in 5m`
+
+``` go
+func Ping(url string) (bool) {
+    // create a new instance of http client struct, with a timeout of 2sec
+    client := http.Client{ Timeout: time.Second * 2 }
+
+    // simple GET request on given URL
+    res, err := client.Get(url)
+    if err != nil {
+        // if unable to GET given URL, then ping must fail
+        return false
+    }
+
+    // always close the response-body, even if content is not required
+    defer res.Body.Close()
+
+    // is the page status okay?
+    return res.StatusCode == http.StatusOK
+}
+```
