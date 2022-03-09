@@ -352,3 +352,15 @@ func Ping(url string) (bool) {
     return res.StatusCode == http.StatusOK
 }
 ```
+
+### TIPs NO.6
+替换多个文件中某个字符串
+
+-i 表示inplace edit，就地修改文件
+-r 表示搜索子目录
+-l 表示输出匹配的文件名
+
+``` sh
+sed -i "s/entry/Entry/g" `grep entry -rl .`
+```
+
