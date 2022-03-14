@@ -364,3 +364,18 @@ func Ping(url string) (bool) {
 sed -i "s/entry/Entry/g" `grep entry -rl .`
 ```
 
+
+### Note No.7
+
+切片将第一个元素放到最后
+
+``` go
+var client []*Client
+
+	c := clients[0]
+	if len(clients) > 1 {
+		// 已处理过的消息客户端重新放在最后
+		clients = append(clients[1:], c)
+	}
+
+```
